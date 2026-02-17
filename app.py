@@ -6,6 +6,7 @@ from pathlib import Path
 import json
 from typing import List, Tuple, Dict
 import shutil
+import tempfile
 
 # Try to import sentence_transformers for CLIP embeddings
 try:
@@ -218,7 +219,18 @@ def create_interface():
             group = finder.similar_groups[int(group_idx)]
             info = f"**Group {int(group_idx) + 1} of {len(finder.similar_groups)}** — {len(group)} similar images"
             
-            return info, group, "", []
+            # Copy images to temp directory for Gradio to serve
+            temp_dir = tempfile.mkdtemp()
+            temp_paths = []
+            for img_path in group:
+                try:
+                    temp_path = os.path.join(temp_dir, Path(img_path).name)
+                    shutil.copy2(img_path, temp_path)
+                    temp_paths.append(temp_path)
+                except Exception as e:
+                    print(f"Error copying {img_path}: {e}")
+            
+            return info, temp_paths, "", []
         
         def update_selection(evt: gr.SelectData, current_selected):
             selected = current_selected.copy() if current_selected else []
