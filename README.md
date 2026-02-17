@@ -7,7 +7,9 @@ A desktop Python application with a graphical interface (tkinter) that uses AI v
 - 🔍 **Smart Detection**: Uses CLIP (vision-language model) to find similar images regardless of size, format, or brightness
 - 🖥️ **Native Desktop App**: Clean GUI using Python's built-in tkinter (no browser needed)
 - 📊 **Visual Review**: Browse groups of similar images with thumbnail previews
-- ✅ **Selective Deletion**: Click images to select them for deletion
+- ✅ **Clear Selection Indicators**: Selected images show red border, green checkmark, and highlighted background
+- 🎨 **Hover Effects**: Images highlight when you hover over them for better feedback
+- 🖱️ **Mouse Wheel Scrolling**: Scroll through image galleries naturally with your mouse wheel
 - ⚡ **Quick Cleanup**: One-click option to keep the largest image and delete the rest
 - 🎯 **Adjustable Sensitivity**: Control how strict the similarity matching should be
 
@@ -63,11 +65,16 @@ The app will analyze all images in the folder and its subfolders.
 ### 3. Select Images to Delete
 
 **Click on any image** to select it for deletion:
-- Selected images will have a thick border
-- You can select multiple images
+- Selected images show:
+  - ✓ **Green "SELECTED" checkmark** in the corner
+  - **Red border** (thick, 5px)
+  - **Light red background**
+  - **Bold red text** for filename
+- Unselected images have white background and normal border
+- **Hover over images** to see a light blue highlight
 - Click again to deselect
 
-The status bar shows how many images are selected.
+The status bar shows how many images are selected and their names.
 
 ### 4. Delete Images
 
@@ -154,14 +161,18 @@ If `sentence-transformers` is not installed, the app falls back to basic histogr
   - **Windows/Mac**: tkinter comes with Python
   - **Linux**: Install with `sudo apt-get install python3-tk` (Ubuntu/Debian) or equivalent
 
-## Screenshots
+## UI Features
 
 The app features:
 - Clean, intuitive interface
 - Thumbnail grid view of similar images
-- Easy click-to-select interaction
+- **Prominent selection indicators**: Green checkmarks, red borders, and colored backgrounds
+- **Interactive hover effects**: Blue highlight when hovering over images
+- **Smooth mouse wheel scrolling** through image galleries
+- Easy click-to-select interaction (click anywhere on the image frame)
 - Progress bar during analysis
 - Status updates throughout the process
+- Hand cursor on all clickable elements
 
 ## License
 
