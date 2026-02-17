@@ -209,6 +209,11 @@ class ImageDedupeApp:
         
         self.image_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         
+        # Bind mouse wheel scrolling for Windows, Mac, and Linux
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)  # Windows and Mac
+        self.canvas.bind_all("<Button-4>", self._on_mousewheel)    # Linux scroll up
+        self.canvas.bind_all("<Button-5>", self._on_mousewheel)    # Linux scroll down
+        
         # Bottom frame - actions
         bottom_frame = ttk.Frame(self.root, padding="10")
         bottom_frame.grid(row=4, column=0, sticky=(tk.W, tk.E))
@@ -237,6 +242,13 @@ class ImageDedupeApp:
     
     def update_threshold_label(self, *args):
         self.threshold_label.config(text=f"{self.threshold_var.get():.2f}")
+    
+    def _on_mousewheel(self, event):
+        """Handle mouse wheel scrolling cross-platform."""
+        if event.num == 4 or event.delta > 0:  # Scroll up (Linux: Button-4, Win/Mac: positive delta)
+            self.canvas.yview_scroll(-1, "units")
+        elif event.num == 5 or event.delta < 0:  # Scroll down (Linux: Button-5, Win/Mac: negative delta)
+            self.canvas.yview_scroll(1, "units")
     
     def browse_folder(self):
         folder = filedialog.askdirectory(title="Select Image Folder")
@@ -334,27 +346,61 @@ class ImageDedupeApp:
                 photo = ImageTk.PhotoImage(img)
                 self.photo_images.append(photo)
                 
-                # Create frame for each image
-                frame = ttk.Frame(self.image_frame, relief=tk.RIDGE, borderwidth=2)
+                # Create frame for each image with white background by default
+                frame = tk.Frame(self.image_frame, relief=tk.SOLID, borderwidth=3, bg="white", cursor="hand2")
                 frame.grid(row=idx // cols, column=idx % cols, padx=5, pady=5)
                 
+                # Container for image and checkmark overlay
+                img_container = tk.Frame(frame, bg="white", cursor="hand2")
+                img_container.pack(padx=5, pady=5)
+                
                 # Image label
-                img_label = tk.Label(frame, image=photo, cursor="hand2")
+                img_label = tk.Label(img_container, image=photo, cursor="hand2", bg="white")
                 img_label.pack()
                 
-                # Bind click event
-                img_label.bind("<Button-1>", lambda e, i=idx: self.toggle_selection(i))
+                # Checkmark label (initially hidden)
+                checkmark_label = tk.Label(img_container, text="✓ SELECTED", 
+                                          font=("Arial", 12, "bold"), 
+                                          fg="white", bg="green",
+                                          relief=tk.RAISED, borderwidth=2,
+                                          cursor="hand2")
+                checkmark_label.place(x=0, y=0)  # Top-left corner
+                checkmark_label.place_forget()  # Hide initially
                 
-                # File info
+                # File info with white background
                 file_name = Path(img_path).name
                 file_size = os.path.getsize(img_path) / 1024  # KB
                 info_text = f"{file_name}\n{file_size:.1f} KB"
-                info_label = ttk.Label(frame, text=info_text, justify=tk.CENTER, font=("Arial", 8))
-                info_label.pack()
+                info_label = tk.Label(frame, text=info_text, justify=tk.CENTER, 
+                                     font=("Arial", 8), bg="white", cursor="hand2")
+                info_label.pack(padx=5, pady=(0, 5))
                 
-                # Store frame reference for selection highlighting
+                # Bind click event to all interactive elements
+                def on_click(i):
+                    return lambda e: self.toggle_selection(i)
+                
+                def on_enter(widget):
+                    return lambda e: widget.config(bg="#e6f3ff") if idx not in self.selected_indices else None
+                
+                def on_leave(widget):
+                    return lambda e: widget.config(bg="white") if idx not in self.selected_indices else None
+                
+                img_label.bind("<Button-1>", on_click(idx))
+                frame.bind("<Button-1>", on_click(idx))
+                checkmark_label.bind("<Button-1>", on_click(idx))
+                img_container.bind("<Button-1>", on_click(idx))
+                info_label.bind("<Button-1>", on_click(idx))
+                
+                # Hover effects
+                for widget in [frame, img_label, img_container, info_label]:
+                    widget.bind("<Enter>", on_enter(widget))
+                    widget.bind("<Leave>", on_leave(widget))
+                
+                # Store references for selection highlighting
                 frame.image_index = idx
-                frame.original_relief = tk.RIDGE
+                frame.checkmark_label = checkmark_label
+                frame.img_container = img_container
+                frame.info_label = info_label
                 
             except Exception as e:
                 print(f"Error displaying {img_path}: {e}")
@@ -374,17 +420,25 @@ class ImageDedupeApp:
         else:
             self.selected_indices.add(idx)
         
-        # Update visual feedback
+        # Update visual feedback with prominent colors
         for widget in self.image_frame.winfo_children():
             if hasattr(widget, 'image_index'):
                 if widget.image_index in self.selected_indices:
-                    widget.config(relief=tk.SOLID, borderwidth=4)
+                    # Selected: red border, green checkmark, light red background
+                    widget.config(relief=tk.SOLID, borderwidth=5, bg="#ffcccc")
+                    widget.checkmark_label.place(x=5, y=5)  # Show checkmark
+                    widget.img_container.config(bg="#ffcccc")
+                    widget.info_label.config(bg="#ffcccc", fg="red", font=("Arial", 8, "bold"))
                 else:
-                    widget.config(relief=tk.RIDGE, borderwidth=2)
+                    # Not selected: normal appearance
+                    widget.config(relief=tk.SOLID, borderwidth=3, bg="white")
+                    widget.checkmark_label.place_forget()  # Hide checkmark
+                    widget.img_container.config(bg="white")
+                    widget.info_label.config(bg="white", fg="black", font=("Arial", 8))
         
         # Update selection text
         if not self.selected_indices:
-            self.selection_var.set("No images selected")
+            self.selection_var.set("No images selected (click images to select)")
         else:
             group = self.finder.similar_groups[self.current_group_idx]
             selected_files = [Path(group[i]).name for i in sorted(self.selected_indices)]
