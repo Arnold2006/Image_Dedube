@@ -156,17 +156,25 @@ class ImageDedupeApp:
         self.threshold_label.grid(row=1, column=2)
         self.threshold_var.trace('w', self.update_threshold_label)
         
+        # Add helpful note about threshold
+        threshold_note = ttk.Label(top_frame, 
+                                   text="💡 0.50-0.70 = loose matching (finds somewhat similar)\n"
+                                        "   0.85 = recommended (finds very similar images)\n"
+                                        "   0.90-0.99 = strict (only nearly identical images)",
+                                   foreground="gray", font=("Arial", 8))
+        threshold_note.grid(row=2, column=1, sticky=tk.W, pady=(0, 5))
+        
         analyze_btn = ttk.Button(top_frame, text="🔍 Analyze Folder", command=self.analyze_folder)
-        analyze_btn.grid(row=2, column=1, pady=10)
+        analyze_btn.grid(row=3, column=1, pady=10)
         
         self.status_var = tk.StringVar(value="Ready. Select a folder to begin.")
         status_label = ttk.Label(top_frame, textvariable=self.status_var, foreground="blue")
-        status_label.grid(row=3, column=0, columnspan=3, sticky=tk.W)
+        status_label.grid(row=4, column=0, columnspan=3, sticky=tk.W)
         
         # Progress bar
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(top_frame, variable=self.progress_var, maximum=100)
-        self.progress_bar.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5)
+        self.progress_bar.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5)
         
         # Separator
         ttk.Separator(self.root, orient=tk.HORIZONTAL).grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
